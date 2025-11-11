@@ -25,4 +25,10 @@ public class EventService {
         List<Event> events = eventRepository.findAll();
         return events.stream().map(eventMapper::toDto).toList();
     }
+
+    public EventResponseDto getEventById(Long id) {
+        Event event = eventRepository.findById(id).orElse(null);
+        return eventMapper.toDto(event);
+
+    }
 }
