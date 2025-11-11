@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
 
@@ -20,5 +21,7 @@ public class Event {
     private String name;
     private int totalStock;
     private int remainingStock;
+
+    @CreatedDate
     private LocalDateTime createdAt;
 }
