@@ -1,7 +1,7 @@
 package com.application.springtransaction.service;
 
 import com.application.springtransaction.domain.Event;
-import com.application.springtransaction.dto.EventRequestDto;
+import com.application.springtransaction.dto.event.EventRequestDto;
 import com.application.springtransaction.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
