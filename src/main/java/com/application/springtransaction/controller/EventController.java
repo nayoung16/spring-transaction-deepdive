@@ -29,4 +29,10 @@ public class EventController {
         List<EventResponseDto> allEvents = eventService.getAllEvents();
         return ResponseEntity.status(HttpStatus.OK).body(allEvents);
     }
+
+    @GetMapping("/{eventId}")
+    public ResponseEntity<EventResponseDto> getEvent(@PathVariable Long eventId) {
+        EventResponseDto eventById = eventService.getEventById(eventId);
+        return ResponseEntity.status(HttpStatus.OK).body(eventById);
+    }
 }
