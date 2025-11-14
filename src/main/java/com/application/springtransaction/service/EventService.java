@@ -7,6 +7,7 @@ import com.application.springtransaction.mapper.EventMapper;
 import com.application.springtransaction.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -26,9 +27,18 @@ public class EventService {
         return events.stream().map(eventMapper::toDto).toList();
     }
 
+
     public EventResponseDto getEventById(Long id) {
         Event event = eventRepository.findById(id).orElse(null);
         return eventMapper.toDto(event);
 
+    }
+
+    @Transactional
+    public void deductStock(long eventId, int amount) {
+        Event event = eventRepository.findById(eventId).orElse(null);
+        if (event != null) {
+            event.deductStock(amount);
+        }
     }
 }
