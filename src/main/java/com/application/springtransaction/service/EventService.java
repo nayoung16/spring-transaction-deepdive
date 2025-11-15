@@ -33,12 +33,4 @@ public class EventService {
         return eventMapper.toDto(event);
 
     }
-
-    @Transactional
-    public void deductStock(long eventId, int amount) {
-        Event event = eventRepository.findById(eventId).orElse(null);
-        if (event != null) {
-            event.deductStock(amount);
-        }
-    }
 }
