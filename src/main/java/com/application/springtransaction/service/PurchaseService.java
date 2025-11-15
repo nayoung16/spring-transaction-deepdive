@@ -9,6 +9,7 @@ import com.application.springtransaction.repository.EventRepository;
 import com.application.springtransaction.repository.PurchaseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,20 +21,19 @@ public class PurchaseService {
     private final PurchaseRepository purchaseRepository;
     private final PurchaseMapper purchaseMapper;
 
-    public Purchase savePurchase(PurchaseRequestDto purchaseRequestDto, Long eventId) {
-        Event event = eventRepository.findById(eventId).orElse(null);
+    @Transactional
+    public void savePurchase(PurchaseRequestDto purchaseRequestDto, Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found. id = " + eventId));
         Purchase purchase = purchaseMapper.toEntity(purchaseRequestDto, event);
-        return purchaseRepository.save(purchase);
+        purchaseRepository.save(purchase);
     }
 
     public List<PurchaseResponseDto> findPurchaseByUserName(String userName) {
-        List<Purchase> purchaseList = purchaseRepository.findPurchaseByUserName(userName);
-        List<PurchaseResponseDto> dtoList = new ArrayList<>();
-        for (Purchase purchase : purchaseList) {
-            PurchaseResponseDto purchaseResponseDto = purchaseMapper.toDto(purchase);
-            dtoList.add(purchaseResponseDto);
-        }
-        return dtoList;
+        return purchaseRepository.findPurchaseByUserName(userName)
+                .stream()
+                .map(purchaseMapper::toDto)
+                .toList();
     }
 
 }
