@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -25,6 +24,17 @@ public class PurchaseService {
     public void savePurchase(PurchaseRequestDto purchaseRequestDto, Long eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found. id = " + eventId));
+
+        int qty = purchaseRequestDto.getQuantity();
+        if (qty <= 0) {
+            throw new IllegalArgumentException("Quantity must be positive");
+        }
+
+        int updatedRows = eventRepository.decrementStockIfEnough(eventId, qty);
+        if (updatedRows == 0) {
+            throw new IllegalStateException("Not enough stock");
+        }
+
         Purchase purchase = purchaseMapper.toEntity(purchaseRequestDto, event);
         purchaseRepository.save(purchase);
     }
