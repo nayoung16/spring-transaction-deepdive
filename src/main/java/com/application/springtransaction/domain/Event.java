@@ -28,14 +28,4 @@ public class Event {
 
     @CreatedDate
     private LocalDateTime createdAt;
-
-    public void deductStock(int amount) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("amount must be positive");
-        }
-        if (remainingStock < amount) {
-            throw new IllegalStateException("not enough stock");
-        }
-        remainingStock -= amount;
-    }
 }
