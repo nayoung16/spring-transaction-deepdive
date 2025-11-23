@@ -9,6 +9,7 @@ import com.application.springtransaction.repository.EventRepository;
 import com.application.springtransaction.repository.PurchaseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -19,12 +20,16 @@ public class PurchaseService {
     private final EventRepository eventRepository;
     private final PurchaseRepository purchaseRepository;
     private final PurchaseMapper purchaseMapper;
+    private static final int MAX_PER_USER = 5;
+
+    public Event findEventById(Long eventId) {
+        return eventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found. id=" + eventId));
+    }
 
     @Transactional
     public void savePurchaseNaive(PurchaseRequestDto dto, Long eventId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found. id=" + eventId));
-
+        Event event = findEventById(eventId);
         validateQuantity(dto.getQuantity());
 
         event.deductStock(dto.getQuantity());
@@ -35,10 +40,10 @@ public class PurchaseService {
 
     @Transactional
     public void savePurchaseAtomic(PurchaseRequestDto dto, Long eventId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found. id = " + eventId));
-
+        Event event = findEventById(eventId);
         validateQuantity(dto.getQuantity());
+
+        validateUserLimit(eventId, dto.getUserName(), dto.getQuantity());
 
         // UPDATE event SET remaining_stock = remaining_stock - ? WHERE id = ? AND remaining_stock >= ?
         int updatedRows = eventRepository.decrementStockIfEnough(eventId, dto.getQuantity());
@@ -53,14 +58,13 @@ public class PurchaseService {
     @Transactional
     public void savePurchasePessimistic(PurchaseRequestDto dto, Long eventId) {
         Event event = eventRepository.findByIdForUpdate(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found. id = " + eventId));
-
+                .orElseThrow(() -> new IllegalArgumentException("Event not found. id=" + eventId));
         validateQuantity(dto.getQuantity());
 
-        int updatedRows = eventRepository.decrementStockIfEnough(eventId, dto.getQuantity());
-        if (updatedRows == 0) {
-            throw new IllegalStateException("Not enough stock");
-        }
+        validateUserLimit(eventId, dto.getUserName(), dto.getQuantity());
+
+        event.deductStock(dto.getQuantity());
+        eventRepository.save(event);
 
         savePurchaseRecord(dto, event);
     }
@@ -81,6 +85,13 @@ public class PurchaseService {
                 .stream()
                 .map(purchaseMapper::toDto)
                 .toList();
+    }
+
+    private void validateUserLimit(Long eventId, String userName, int amount) {
+        int alreadyBought = purchaseRepository.sumQuantityByEventIdAndUserName(eventId, userName);
+        if (alreadyBought + amount > MAX_PER_USER) {
+            throw new IllegalStateException("User purchase limit exceeded. max=" + MAX_PER_USER);
+        }
     }
 
 }

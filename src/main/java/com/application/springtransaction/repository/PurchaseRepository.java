@@ -14,4 +14,11 @@ public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
 
     @Query("select sum(p.quantity) from Purchase p where p.event.id = :eventId")
     long countByEventId(@Param("eventId") long eventId);
+
+    @Query("select coalesce(sum(p.quantity), 0) " +
+            "from Purchase p " +
+            "where p.event.id = :eventId and p.userName = :userName")
+    int sumQuantityByEventIdAndUserName(Long eventId, String userName);
+
+    List<Purchase> findByEventId(Long eventId);
 }
