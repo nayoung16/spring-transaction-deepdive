@@ -22,7 +22,10 @@ public class PurchaseService {
 
     @Transactional
     public void savePurchase(PurchaseRequestDto purchaseRequestDto, Long eventId) {
-        Event event = eventRepository.findById(eventId)
+        //Event event = eventRepository.findById(eventId)
+
+        // 비관적 락
+        Event event = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found. id = " + eventId));
 
         int qty = purchaseRequestDto.getQuantity();
