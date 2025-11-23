@@ -41,7 +41,7 @@ public class EventController {
 
     @PostMapping("/{eventId}/purchase")
     public ResponseEntity<?> purchaseEvent(@PathVariable Long eventId, @RequestBody PurchaseRequestDto purchaseRequestDto) {
-        purchaseService.savePurchase(purchaseRequestDto, eventId);
+        purchaseService.savePurchaseAtomic(purchaseRequestDto, eventId);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

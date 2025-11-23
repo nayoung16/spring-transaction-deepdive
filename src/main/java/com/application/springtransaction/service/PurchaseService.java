@@ -21,21 +21,58 @@ public class PurchaseService {
     private final PurchaseMapper purchaseMapper;
 
     @Transactional
-    public void savePurchase(PurchaseRequestDto purchaseRequestDto, Long eventId) {
+    public void savePurchaseNaive(PurchaseRequestDto dto, Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found. id=" + eventId));
+
+        validateQuantity(dto.getQuantity());
+
+        event.deductStock(dto.getQuantity());
+        eventRepository.save(event);
+
+        savePurchaseRecord(dto, event);
+    }
+
+    @Transactional
+    public void savePurchaseAtomic(PurchaseRequestDto dto, Long eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found. id = " + eventId));
 
-        int qty = purchaseRequestDto.getQuantity();
-        if (qty <= 0) {
-            throw new IllegalArgumentException("Quantity must be positive");
-        }
+        validateQuantity(dto.getQuantity());
 
-        int updatedRows = eventRepository.decrementStockIfEnough(eventId, qty);
+        // UPDATE event SET remaining_stock = remaining_stock - ? WHERE id = ? AND remaining_stock >= ?
+        int updatedRows = eventRepository.decrementStockIfEnough(eventId, dto.getQuantity());
         if (updatedRows == 0) {
             throw new IllegalStateException("Not enough stock");
         }
 
-        Purchase purchase = purchaseMapper.toEntity(purchaseRequestDto, event);
+        savePurchaseRecord(dto, event);
+    }
+
+
+    @Transactional
+    public void savePurchasePessimistic(PurchaseRequestDto dto, Long eventId) {
+        Event event = eventRepository.findByIdForUpdate(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found. id = " + eventId));
+
+        validateQuantity(dto.getQuantity());
+
+        int updatedRows = eventRepository.decrementStockIfEnough(eventId, dto.getQuantity());
+        if (updatedRows == 0) {
+            throw new IllegalStateException("Not enough stock");
+        }
+
+        savePurchaseRecord(dto, event);
+    }
+
+    private void validateQuantity(int qty) {
+        if (qty <= 0) {
+            throw new IllegalArgumentException("Quantity must be positive");
+        }
+    }
+
+    private void savePurchaseRecord(PurchaseRequestDto dto, Event event) {
+        Purchase purchase = purchaseMapper.toEntity(dto, event);
         purchaseRepository.save(purchase);
     }
 
