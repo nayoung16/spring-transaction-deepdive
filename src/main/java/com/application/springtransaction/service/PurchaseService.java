@@ -9,6 +9,7 @@ import com.application.springtransaction.repository.EventRepository;
 import com.application.springtransaction.repository.PurchaseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -20,11 +21,14 @@ public class PurchaseService {
     private final PurchaseRepository purchaseRepository;
     private final PurchaseMapper purchaseMapper;
 
+    public Event findEventById(Long eventId) {
+        return eventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found. id=" + eventId));
+    }
+
     @Transactional
     public void savePurchaseNaive(PurchaseRequestDto dto, Long eventId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found. id=" + eventId));
-
+        Event event = findEventById(eventId);
         validateQuantity(dto.getQuantity());
 
         event.deductStock(dto.getQuantity());
@@ -35,9 +39,7 @@ public class PurchaseService {
 
     @Transactional
     public void savePurchaseAtomic(PurchaseRequestDto dto, Long eventId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found. id = " + eventId));
-
+        Event event = findEventById(eventId);
         validateQuantity(dto.getQuantity());
 
         // UPDATE event SET remaining_stock = remaining_stock - ? WHERE id = ? AND remaining_stock >= ?
@@ -52,9 +54,7 @@ public class PurchaseService {
 
     @Transactional
     public void savePurchasePessimistic(PurchaseRequestDto dto, Long eventId) {
-        Event event = eventRepository.findByIdForUpdate(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found. id = " + eventId));
-
+        Event event = findEventById(eventId);
         validateQuantity(dto.getQuantity());
 
         int updatedRows = eventRepository.decrementStockIfEnough(eventId, dto.getQuantity());
