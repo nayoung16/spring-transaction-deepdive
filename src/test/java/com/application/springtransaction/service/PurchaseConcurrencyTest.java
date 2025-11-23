@@ -29,12 +29,12 @@ public class PurchaseConcurrencyTest {
     void 동시에_여러_구매_요청_보내보기() throws Exception {
         Event event = Event.builder()
                 .name("동시성 테스트 이벤트")
-                .totalStock(10)
-                .remainingStock(10)
+                .totalStock(5)
+                .remainingStock(5)
                 .build();
         Event savedEvent = eventRepository.save(event);
 
-        int threadCount = 10; // 10명이 동시에 산다고 가정
+        int threadCount = 20;
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
 
         CountDownLatch startLatch = new CountDownLatch(1); // 동시에 시작시키기 위한 래치
@@ -72,7 +72,7 @@ public class PurchaseConcurrencyTest {
         System.out.println("생성된 Purchase 개수 = " + purchaseCount);
         System.out.println("남은 재고 = " + afterEvent.getRemainingStock());
 
-        assertThat(purchaseCount).isEqualTo(10); // 10명이 다 성공했는지
+        assertThat(purchaseCount).isEqualTo(5); // 10명이 다 성공했는지
         assertThat(afterEvent.getRemainingStock()).isEqualTo(0); // 현재 구현 기준
     }
 }
