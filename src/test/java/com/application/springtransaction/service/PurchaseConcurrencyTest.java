@@ -51,7 +51,7 @@ public class PurchaseConcurrencyTest {
                     //dto.setQuantity(1);
 
                     // 실제 구매 호출
-                    purchaseService.savePurchase(dto, savedEvent.getId());
+                    purchaseService.savePurchaseAtomic(dto, savedEvent.getId());
                 } catch (Exception e) {
                     System.out.println("스레드 예외: " + e.getMessage());
                 } finally {
