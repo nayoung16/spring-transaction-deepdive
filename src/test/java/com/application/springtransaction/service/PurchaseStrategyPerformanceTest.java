@@ -23,7 +23,10 @@ public class PurchaseStrategyPerformanceTest {
     EventRepository eventRepository;
     @Autowired
     PurchaseRepository purchaseRepository;
+
     @Autowired PurchaseService purchaseService;
+
+    @Autowired PurchaseFacade purchaseFacade;
 
     private enum Strategy { NAIVE, ATOMIC, PESSIMISTIC }
 
@@ -143,6 +146,23 @@ public class PurchaseStrategyPerformanceTest {
 
         runStrategy("PESSIMISTIC", threadCount, userPoolSize, saved.getId(),
                 (dto, id) -> purchaseService.savePurchasePessimistic(dto, id));
+    }
+
+    @Test
+    void optimistic_유저한도_동시성_비교() throws Exception {
+
+        Event event = Event.builder()
+                .name("policy-test")
+                .totalStock(200)
+                .remainingStock(200)
+                .build();
+        Event saved = eventRepository.save(event);
+
+        int threadCount = 200;
+        int userPoolSize = 3;
+
+        runStrategy("OPTIMISTIC", threadCount, userPoolSize, saved.getId(),
+                (dto, id) -> purchaseFacade.savePurchaseOptimisticWithRetry(dto, id));
     }
 
     private void runStrategy(
