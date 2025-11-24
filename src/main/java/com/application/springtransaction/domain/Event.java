@@ -26,6 +26,9 @@ public class Event {
     private int totalStock;
     private int remainingStock;
 
+    @Version
+    private Long version;
+
     @CreatedDate
     private LocalDateTime createdAt;
 

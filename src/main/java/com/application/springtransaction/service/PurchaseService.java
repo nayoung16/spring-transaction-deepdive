@@ -10,6 +10,7 @@ import com.application.springtransaction.repository.PurchaseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -25,6 +26,17 @@ public class PurchaseService {
     public Event findEventById(Long eventId) {
         return eventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found. id=" + eventId));
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void savePurchaseOptimistic(PurchaseRequestDto dto, Long eventId) {
+        Event event = findEventById(eventId);
+        validateQuantity(dto.getQuantity());
+
+        validateUserLimit(eventId, dto.getUserName(), dto.getQuantity());
+        event.deductStock(dto.getQuantity());
+        Purchase purchase = purchaseMapper.toEntity(dto, event);
+        purchaseRepository.save(purchase);
     }
 
     @Transactional
